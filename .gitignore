@@ -1,1 +1,19 @@
+Python virtual environment
 
+.venv/
+
+Python cache
+
+pycache/*.pyc
+
+Model checkpoints
+
+*.pt*.pth
+
+Logs
+
+logs/
+
+Dataset
+
+data/raw/
