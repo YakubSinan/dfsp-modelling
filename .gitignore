@@ -17,3 +17,9 @@ logs/
 Dataset
 
 data/raw/
+
+# Dataset
+data/
+
+# Smoke test output
+smoke_test_result.jpg
