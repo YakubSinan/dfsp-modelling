@@ -1,1 +1,8 @@
+# YOLO & Runs
+runs/
+*.pt
 
+# Python / Environment
+dfsp-env/
+__pycache__/
+.DS_Store
