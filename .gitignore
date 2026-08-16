@@ -1,34 +1,20 @@
-Python virtual environment
-
+# Python virtual environment
 .venv/
 
-Python cache
+# Python cache
+__pycache__/
+*.pyc
 
-pycache/*.pyc
+# Model checkpoints
+*.pt
+*.pth
 
-Model checkpoints
-
-*.pt*.pth
-
-Logs
-
+# Logs
 logs/
 
-Dataset
-
-data/raw/
-
-# Dataset
-data/
+# Dataset images
+model-close/data/dfsp/
+model-close/data/dermatofibroma/
 
 # Smoke test output
 smoke_test_result.jpg
-
-# Keep model data manifests
-!model-close/data/annotations.csv
-!model-close/data/df_train.csv
-!model-close/data/df_val.csv
-!model-close/data/df_test.csv
-
-# Never commit model weights
-*.pth

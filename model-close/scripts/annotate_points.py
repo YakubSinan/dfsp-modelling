@@ -4,69 +4,118 @@ import cv2
 
 ROOT = Path(__file__).resolve().parents[1]
 
-DATA_DIRS = {
-    "DF": ROOT / "data" / "dermatofibroma",
-    "DFSP": ROOT / "data" / "dfsp",
-}
-
+DFSP_DIR = ROOT / "data" / "dfsp"
 OUTPUT_CSV = ROOT / "data" / "annotations.csv"
 
-image_extensions = {".jpg", ".jpeg", ".png"}
+IMAGE_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".jfif",
+    ".avif"
+}
 
-images = []
 
-for label, folder in DATA_DIRS.items():
-    for path in sorted(folder.iterdir()):
-        if path.suffix.lower() in image_extensions:
-            images.append((label, path))
+# Mevcut annotationları oku
+existing_rows = []
 
-print(f"Toplam görüntü: {len(images)}")
-print(f"DF: {sum(1 for x in images if x[0] == 'DF')}")
-print(f"DFSP: {sum(1 for x in images if x[0] == 'DFSP')}")
+with open(
+    OUTPUT_CSV,
+    "r",
+    encoding="utf-8",
+    newline=""
+) as f:
 
-annotations = []
+    reader = csv.DictReader(f)
 
-for index, (label, image_path) in enumerate(images, start=1):
+    for row in reader:
+        existing_rows.append(row)
+
+
+annotated_images = {
+    row["image"]
+    for row in existing_rows
+    if row["label"] == "DFSP"
+}
+
+
+print(f"Mevcut annotation: {len(existing_rows)}")
+print(f"Mevcut DFSP annotation: {len(annotated_images)}")
+
+
+# Sadece annotation olmayan DFSP görüntülerini bul
+missing_images = sorted(
+    [
+        p for p in DFSP_DIR.iterdir()
+        if p.is_file()
+        and p.suffix.lower() in IMAGE_EXTENSIONS
+        and p.name not in annotated_images
+    ]
+)
+
+
+print(f"DFSP klasöründeki görüntü: {sum(1 for p in DFSP_DIR.iterdir() if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS)}")
+print(f"Yeni DFSP görüntüsü: {len(missing_images)}")
+
+
+if not missing_images:
+    print("Yeni annotation yapılacak görüntü yok.")
+    exit()
+
+
+# Annotation
+for index, image_path in enumerate(missing_images, start=1):
 
     image = cv2.imread(str(image_path))
 
     if image is None:
-        print(f"[UYARI] Görüntü okunamadı: {image_path}")
+        print(f"[ERROR] Okunamadı: {image_path.name}")
         continue
 
-    original = image.copy()
+    height, width = image.shape[:2]
 
-    h, w = image.shape[:2]
-
-    scale = min(1000 / w, 800 / h, 1.0)
+    scale = min(
+        1000 / width,
+        800 / height,
+        1.0
+    )
 
     display = cv2.resize(
         image,
-        (int(w * scale), int(h * scale))
+        (
+            int(width * scale),
+            int(height * scale)
+        )
     )
-
-    selected_point = None
-
-    window_name = f"Annotation {index}/{len(images)} - {label}"
-
-
 
     clicked = {"point": None}
 
+    window_name = f"DFSP {index}/{len(missing_images)}"
+
     def callback(event, x, y, flags, param):
+
         if event == cv2.EVENT_LBUTTONDOWN:
+
             original_x = int(x / scale)
             original_y = int(y / scale)
 
-            clicked["point"] = (original_x, original_y)
+            clicked["point"] = (
+                original_x,
+                original_y
+            )
 
             print(
-                f"  Selected center: "
+                f"Selected: "
                 f"({original_x}, {original_y})"
             )
 
+
     cv2.namedWindow(window_name)
-    cv2.setMouseCallback(window_name, callback)
+    cv2.setMouseCallback(
+        window_name,
+        callback
+    )
+
 
     while True:
 
@@ -74,23 +123,24 @@ for index, (label, image_path) in enumerate(images, start=1):
 
         cv2.putText(
             view,
-            f"{label} | {image_path.name}",
+            f"DFSP {index}/{len(missing_images)} | {image_path.name}",
             (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
+            0.6,
             (0, 255, 0),
             2
         )
 
         if clicked["point"] is not None:
-            px, py = clicked["point"]
 
-            display_x = int(px * scale)
-            display_y = int(py * scale)
+            x, y = clicked["point"]
 
             cv2.circle(
                 view,
-                (display_x, display_y),
+                (
+                    int(x * scale),
+                    int(y * scale)
+                ),
                 7,
                 (0, 0, 255),
                 -1
@@ -101,38 +151,44 @@ for index, (label, image_path) in enumerate(images, start=1):
                 "ENTER = save | R = reset",
                 (10, view.shape[0] - 20),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
+                0.55,
                 (255, 255, 255),
                 2
             )
 
         else:
+
             cv2.putText(
                 view,
                 "Click lesion center",
                 (10, view.shape[0] - 20),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.6,
+                0.55,
                 (255, 255, 255),
                 2
             )
+
 
         cv2.imshow(window_name, view)
 
         key = cv2.waitKey(30) & 0xFF
 
+
+        # ENTER
         if key in (13, 10):
+
             if clicked["point"] is not None:
+
                 x, y = clicked["point"]
 
-                annotations.append([
-                    image_path.name,
-                    label,
-                    w,
-                    h,
-                    x,
-                    y
-                ])
+                existing_rows.append({
+                    "image": image_path.name,
+                    "label": "DFSP",
+                    "width": str(width),
+                    "height": str(height),
+                    "center_x": str(x),
+                    "center_y": str(y)
+                })
 
                 print(
                     f"[SAVED] {image_path.name} "
@@ -141,65 +197,53 @@ for index, (label, image_path) in enumerate(images, start=1):
 
                 break
 
-        # R -> tekrar seç
-        elif key in (ord("r"), ord("R")):
-            clicked["point"] = None
-            print("  Point reset.")
 
+        # R
+        elif key in (ord("r"), ord("R")):
+
+            clicked["point"] = None
+
+
+        # ESC
         elif key == 27:
-            print("\nAnnotation durduruldu.")
+
             cv2.destroyAllWindows()
 
-            with open(
-                OUTPUT_CSV,
-                "w",
-                newline="",
-                encoding="utf-8"
-            ) as f:
+            print("Annotation durduruldu.")
+            exit()
 
-                writer = csv.writer(f)
-
-                writer.writerow([
-                    "image",
-                    "label",
-                    "width",
-                    "height",
-                    "center_x",
-                    "center_y"
-                ])
-
-                writer.writerows(annotations)
-
-            print(
-                f"Kaydedilen annotation: "
-                f"{len(annotations)}"
-            )
-
-            raise SystemExit
 
     cv2.destroyAllWindows()
 
 
+# Tüm annotationları kaydet
+fieldnames = [
+    "image",
+    "label",
+    "width",
+    "height",
+    "center_x",
+    "center_y"
+]
+
 with open(
     OUTPUT_CSV,
     "w",
-    newline="",
-    encoding="utf-8"
+    encoding="utf-8",
+    newline=""
 ) as f:
 
-    writer = csv.writer(f)
+    writer = csv.DictWriter(
+        f,
+        fieldnames=fieldnames
+    )
 
-    writer.writerow([
-        "image",
-        "label",
-        "width",
-        "height",
-        "center_x",
-        "center_y"
-    ])
+    writer.writeheader()
+    writer.writerows(existing_rows)
 
-    writer.writerows(annotations)
 
-print("\nAnnotation tamamlandı!")
-print(f"CSV: {OUTPUT_CSV}")
-print(f"Toplam kaydedilen: {len(annotations)}")
+print()
+print("==============================")
+print("Annotation tamamlandı!")
+print(f"Toplam annotation: {len(existing_rows)}")
+print("==============================")
