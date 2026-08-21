@@ -5,7 +5,7 @@ from shared.validation import validate_model_output
 
 # 1. Das YOLO modell 
 model = YOLO("runs/detect/train/weights/best.pt")
-result = model.predict("model-wide/fernseher.jpg", device="cpu")[0]
+result = model.predict("model-wide/dfsp_001.jpg", device="cpu")[0]
 
 predictions = []
 
@@ -27,7 +27,7 @@ print(f"\n---> {len(predictions)}Detections are generated and translated!")
 
 # 4. create a ModelOutput instance with the predictions
 output = ModelOutput(
-    image_id="fernseher_test",
+    image_id="dfsp_001",
     view="wide",
     predictions=predictions,
     patient_id="smoke_patient_001"
