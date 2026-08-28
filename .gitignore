@@ -1,1 +1,11 @@
+# Python cache
+__pycache__/
+*.py[cod]
 
+# Virtual environments
+.venv/
+venv/
+
+# Skin localization generated files
+skin-localization/data/
+skin-localization/outputs/
