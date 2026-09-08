@@ -26,6 +26,6 @@ TRAIN_SIZE = 8473
 SEED       = 42
  
 # --- Inferenz ---
-THRESHOLD = 0.3
+THRESHOLD = 0.2
  
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
