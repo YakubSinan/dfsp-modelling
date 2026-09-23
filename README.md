@@ -4,7 +4,12 @@ An integrated skin lesion inference pipeline combining three trained models:
 
 **WIDE detection → ResNet18 classification → ResNet50 CLOSE localization**
 
+The three models are already integrated into the inference pipeline.
+
+No manual model integration is required. The pipeline automatically connects the WIDE detection model, the ResNet18 lesion classifier, and the ResNet50 CLOSE localization model in the correct order.
+
 This repository contains the trained model weights and the inference code required to run the complete pipeline on an input image.
+The models are separate trained components, but they are used together as a single end-to-end inference pipeline.
 
 ---
 
@@ -119,28 +124,25 @@ The `.pth` files are stored using Git LFS.
 
 ## Installation
 
-Clone the repository:
+Git LFS is required because the trained model weights are stored as large files.
 
-```bash
-git clone <REPOSITORY_URL>
-cd dfsp-modelling
-```
-
-Install the required Python packages:
-
-```bash
-pip install -r requirements.txt
-```
-
-The trained weights are managed with Git LFS. Make sure Git LFS is installed and initialized before cloning or downloading the repository:
+Make sure Git LFS is installed and initialized:
 
 ```bash
 git lfs install
-```
 
----
+Clone the final integration branch:
+
+git clone -b final-integration https://github.com/YakubSinan/dfsp-modelling.git
+cd dfsp-modelling
+
+Install the required Python packages:
+
+pip install -r requirements.txt
 
 ## Usage
+
+The complete pipeline can be run with a single command. The user does not need to run the three models separately or manually connect their outputs.
 
 Run the complete inference pipeline with:
 
@@ -148,10 +150,20 @@ Run the complete inference pipeline with:
 python pipeline/inference.py --image path/to/image.jpg --output-dir outputs
 ```
 
+The pipeline automatically performs the following steps:
+
+1. Detects candidate lesion centers using the WIDE model.
+2. Creates a 160 × 160 crop around each candidate.
+3. Classifies each crop using the ResNet18 lesion classifier.
+4. Discards candidates classified as no_lesion.
+5. Localizes the remaining lesions using the ResNet50 CLOSE model.
+6. Maps the predicted bounding boxes and centers back to the original image.
+7. Saves the final visualization and JSON results.
+
 Example:
 
 ```bash
-python pipeline/inference.py         --image path/to/image.jpg         --output-dir outputs
+python pipeline/inference.py --image path/to/image.jpg --output-dir outputs
 ```
 
 The pipeline can run on CPU and automatically uses CUDA when a compatible GPU is available.
@@ -217,3 +229,5 @@ All four test cases completed successfully.
 This repository is intended for model inference and integration. It does not contain the original model training pipelines or datasets.
 
 The outputs of this pipeline are model predictions and should not be interpreted as a medical diagnosis.
+
+This repository is packaged as a ready-to-run inference system. The trained weights, model definitions, and integration code are included in the repository.
