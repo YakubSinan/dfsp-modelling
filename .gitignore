@@ -6,6 +6,13 @@ __pycache__/
 .venv/
 venv/
 
-# Skin localization generated files
-skin-localization/data/
-skin-localization/outputs/
+# Generated outputs
+outputs/
+test_outputs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
